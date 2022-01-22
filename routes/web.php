@@ -27,12 +27,16 @@ Route::group(['middleware'=>['auth','admin']],function(){
     Route::get('/dashboard', function () {
         return view('admin.dashboard');
     })->name('admin.index');
-    Route::get('/students','StudentController@index')->name('student.index');
+    Route::get('/student', function () {
+        return view('admin.student');
+    })->name('student.index');
 });
 
 
 Route::post('/add-student','StudentController@addStudent')->name('student.add');
 Route::post('/search-student','StudentController@searchStudent')->name('student.search');
-Route::get('/students/{id}','StudentController@getStudentById')->name('student.getbyid');
+Route::post('/students','StudentController@getStudentById')->name('student.getbyid');
 Route::put('/student','StudentController@updateStudent')->name('student.update');
 Route::delete('/students/{id}','StudentController@deleteStudent')->name('student.delete');
+Route::get('/getStudent','StudentController@index')->name('student.getstudent');
+// Route::resource('/student',"StudentController");

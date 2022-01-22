@@ -36,21 +36,11 @@
                       <th>Last Name</th>
                       <th>Email</th>
                       <th>Phone</th>
-                      <th>Action</th>
+                      <th>Edit</th>
+                      <th>Delete</th>
                     </thead>
                     <tbody>
-                      @foreach($students as $student)
-                        <tr id="sid{{$student->id}}">
-                          <td>{{$student->firstName}}</td>
-                          <td>{{$student->lastName}}</td>
-                          <td>{{$student->email}}</td>
-                          <td>{{$student->phone}}</td>
-                          <td>
-                            <a href="javascript:void(0)" onclick="editStudent({{$student->id}})" class="btn btn-info">Edit</a>
-                            <a href="javascript:void(0)" onclick="deleteStudent({{$student->id}})" class="btn btn-danger">Delete</a>  
-                          </td>
-                        </tr>      
-                      @endforeach
+                     
                     </tbody>
                   </table>
                 </div>
@@ -58,17 +48,17 @@
             </div>
           </div>
 
-          <!-- Modal -->
+          <!-- Modal Create -->
           <div class="modal fade" id="studentModal" tabindex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true">
               <div class="modal-dialog">
                 <div class="modal-content">
                   <div class="modal-header">
                     <h5 class="modal-title" id="exampleModalLabel">Add New Student</h5>
-                    <button type="button" class="btn btn-danger btn-close" data-bs-dismiss="modal" aria-label="Close"><i class="now-ui-icons ui-1_simple-remove"></i></button>
+                    <!-- <button type="button" class="btn btn-danger btn-close" data-bs-dismiss="modal" aria-label="Close"><i class="now-ui-icons ui-1_simple-remove"></i></button> -->
                   </div>
                   <div class="modal-body">
                     <form id="studentForm">
-                      @csrf
+                    @csrf
                       <div class="from-group">
                         <label for="firstname">FirstName</label>
                         <input type="text" name="firstname" class="form-control" />
@@ -85,7 +75,7 @@
                         <label for="phone">Phone</label>
                         <input type="text" name="phone" class="form-control" />
                       </div>
-                      <button type="submit" class="btn btn-success">Submit</button>
+                      <button id="#submit" class="btn btn-success">Submit</button>
                     </form>
                   </div>
                 </div>
@@ -100,7 +90,7 @@
                 <div class="modal-content">
                   <div class="modal-header">
                     <h5 class="modal-title" id="exampleModalLabel">Edit Student</h5>
-                    <button type="button" class="btn btn-danger btn-close" data-bs-dismiss="modal" aria-label="Close"><i class="now-ui-icons ui-1_simple-remove"></i></button>
+                    <!-- <button type="button" class="btn btn-danger btn-close" data-bs-dismiss="modal" aria-label="Close"><i class="now-ui-icons ui-1_simple-remove"></i></button> -->
                   </div>
                   <div class="modal-body">
                     <form id="studentEditForm">
@@ -121,17 +111,44 @@
                       <div class="from-group">
                         <label for="phone">Phone</label>
                         <input type="text" name="phone" id="phone" class="form-control" />
-                      </div>
-                      <button type="submit" class="btn btn-success">Submit</button>
+                      </div> 
+                      <button type="submit" class="btn btn-success">Update</button>
                     </form>
                   </div>
                 </div>
               </div>
 </div>
 
-<!-- create   -->
-        <script>
-          $('#studentForm').submit(function(e){
+        
+@endsection
+
+@section('scripts')
+<script>
+  // databases student
+var table=$('#studentTable').DataTable( {
+            ajax:"{{route('student.getstudent')}}",
+            columns: [
+                { data: 'firstName' },
+                { data: 'lastName' },
+                { data: 'email' },
+                { data: 'phone' },
+                {
+                  data:null,
+                  render:function(data,type,row){
+                    return `<button data-id="${row.id}" class="btn btn-info" id="edit"><i class="fa fa-edit"></i></button>`;
+                  }
+                },
+                {
+                  data:null,
+                  render:function(data,type,row){
+                    return `<button data-id="${row.id}" class="btn btn-danger" id="delete"><i class="fa fa-trash"></i></button>`;
+                  }
+                },
+            ]
+        } );
+// create student
+  $(document).ready(function(){
+    $('#studentForm').submit(function(e){
             e.preventDefault();
             var firstname=$("input[name=firstname]").val();
             var lastname=$("input[name=lastname]").val();
@@ -151,30 +168,44 @@
                 _token:_token
               },
               success:function(response){
-                console.log(response)
-                $('#studentTable tbody').prepend('<tr><td>'+firstname+'</td><td>'+lastname+'</td><td>'+email+'</td><td>'+phone+
-                '</td><td>'+' <a href="javascript:void(0)" onclick="editStudent({{$student->id}})" class="btn btn-info">Edit</a>'+' <a href="javascript:void(0)" onclick="deleteStudent({{$student->id}})" class="btn btn-danger">Delete</a>'+'</td></tr>');
-                $('#studentModal').modal('toggle');
+                console.log(response);
                 $('#studentForm')[0].reset();
+                $('#studentModal').modal('hide');
+                table.ajax.reload();
                 $('.modal-backdrop').remove();
+                
               }
             })
+            
           })
-        </script>
-<!-- update   -->
-        <script>
-          function editStudent(id){
-            $.get('/students/'+id,function(student){
-              $("#id").val(student.id);
-              $("#firstname").val(student.firstName);
-              $("#lastname").val(student.lastName);
-              $("#email").val(student.email);
-              $("#phone").val(student.phone);
-              $("#studentEditModal").modal("toggle");
+
           
-            });
-          }
-          $('#studentEditForm').submit(function(e){
+  });
+// find by id student
+  $(document).on('click','#edit',function(){
+  
+    $.ajax({
+       url:"{{route('student.getbyid')}}",
+       type:"post",
+       dataType:'json',
+       data:{
+        _token:$("input[name=_token]").val(),
+        "id":$(this).data("id"),
+       },
+       success:function(response){
+        console.log(response);
+         $('input[name="id"]').val(response.data.id);
+         $('input[name="firstname"]').val(response.data.firstName);
+         $('input[name="lastname"]').val(response.data.lastName);
+         $('input[name="email"]').val(response.data.email);
+         $('input[name="phone"]').val(response.data.phone);
+         $("#studentEditModal").modal("toggle");
+       }
+    });
+  });
+//update student
+ $(document).ready(function(){
+  $('#studentEditForm').submit(function(e){
             e.preventDefault();
             var id=$('#id').val();
             var firstname=$('#firstname').val();
@@ -196,22 +227,20 @@
                
               },
               success:function(response){
-                $('#sid'+response.id+' td:nth-child(1)').text(response.firstname);
-                $('#sid'+response.id+' td:nth-child(2)').text(response.lastname);
-                $('#sid'+response.id+' td:nth-child(3)').text(response.email);
-                $('#sid'+response.id+' td:nth-child(4)').text(response.phone);
-                $("#studentEditModal").modal('toggle');
+                console.log(response);
                 $("#studentEditForm")[0].reset();
-                // $('.modal-backdrop').remove();
-
+                $('#studentEditModal').modal("toggle");
+                table.ajax.reload();
+                $('.modal-backdrop').remove();
               }
             });
-          })
-        </script>
-<!-- Delete -->
-        <script>
-          function deleteStudent(id){
-            if(confirm("Do you really want to delete this record?")){
+          });    
+ });
+ //delete student
+$(document).on('click','#delete',function(){
+  if(confirm("Do you really want to delete this record?")){
+    var id=$(this).data("id");
+    console.log(id);
               $.ajax({
                 url:'/students/'+id,
                 type:'DELETE',
@@ -219,64 +248,12 @@
                   _token:$("input[name=_token]").val()
                 },
                 success:function(response){
-                  $('#sid'+id).remove();
+                  table.ajax.reload();
                 }
               });
             }
-          }
-        </script>
-<!-- Search -->
-        <script>
-          $('#search').on('keyup',function(){
-            value=$(this).val();
-          
-            $.ajax({
-              url:"{{route('student.search')}}",
-              method:'POST',
-              data:{
-                'search':value,
-                _token:$("input[name=_token]").val(),
-              },
-              success:function(response){
-                console.log(response.data);
-                const student =response.data
-                   $('tbody').empty();
-                   student.forEach((data,item)=>{
-                    $('#studentTable tbody').append('<tr><td>'+data.firstName+'</td><td>'+data.lastName+'</td><td>'+data.email+'</td><td>'+data.phone+
-                '</td><td>'+' <a href="javascript:void(0)" onclick="editStudent({{$student->id}})" class="btn btn-info">Edit</a>'+' <a href="javascript:void(0)" onclick="deleteStudent({{$student->id}})" class="btn btn-danger">Delete</a>'+'</td></tr>');
-                   });
-                 
-                
-                
-              }   
-            })
-          });
-      
-          // $(document).ready(function(){
-          //   fetch_data();
-          //   function fetch_data(search = '')
-          //   {
-          //     $.ajax({
-          //       url:"{{route('student.search')}}",
-          //       method:'GET',
-          //       data:{search:search},
-          //       dataType:'json',
-          //       success:function(response){
-          //         $('tbody').html(response.table_data);
-          //         $('#studentTable').text(response.total_data);
-          //       }
-          //     })
-          //   }
-          // });  
-          // $(document).on('keyup','#seach',function(){
-          //   var query=$(this).val();
-          //   fetch_data(query);
-          // });
-        </script> 
-        
-@endsection
+});
 
-@section('scripts')
-
+</script>
 
 @endsection
